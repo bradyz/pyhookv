@@ -1,7 +1,9 @@
 // This file is auto-generated, do NOT edit!
 #include "pybind11/pybind11.h"
 #include "scripthook/enums.h"
+
 namespace py = pybind11;
+
 void defEnums(py::module m) {
 	py::enum_<eAudioFlag>(m, "eAudioFlag")
 		.value("audio_flag_activate_switch_wheel_audio",eAudioFlag::AudioFlagActivateSwitchWheelAudio)
@@ -1394,4 +1396,3 @@ void defEnums(py::module m) {
 		.value("hud_component_replay_timer",eHudComponent::HudComponentReplayTimer)
 ;
 }
-

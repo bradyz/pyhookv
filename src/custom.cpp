@@ -42,7 +42,6 @@ void custom(py::class_<Py_Unk3>){}
 void custom(py::class_<Py_Void>){}
 void custom(py::class_<Py_Water>){}
 void custom(py::class_<Py_Weapon>){}
-void custom(py::class_<Py_Worldprobe>){}
 void custom(py::class_<Py_Zone>){}
 void custom(py::class_<Py_uint>){}
 
@@ -98,7 +97,7 @@ void custom(py::class_<Py_Entity> c) {
 		.def_static("set_no_longer_needed", [](Py_Entity e) {Entity ee = e; ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&ee); e = ee; })
 		.def("matrix", [](Py_Entity e) {Vector3 right, forward, up, position; ENTITY::GET_ENTITY_MATRIX(e.id, (Any*)&right, (Any*)&forward, &up, &position); return py::make_tuple(right, forward, up, position); })
 		.def("quaternion", [](Py_Entity e) {float x, y, z, w; ENTITY::GET_ENTITY_QUATERNION(e.id, &x, &y, &z, &w); return py::make_tuple(x, y, z, w); })
-		;
+		.def(py::init<int>());
 	// Ignore ENTITY::GET_ENTITY_SCRIPT
 	// Ignore ENTITY::FIND_ANIM_EVENT_PHASE
 	// Ignore ENTITY::PLAY_SYNCHRONIZED_MAP_ENTITY_ANIM
@@ -220,10 +219,16 @@ void custom(py::class_<Py_Vehicle> c) {
 			return py::make_tuple(steering, throttle, brake);
 		},
 		[GEAR_BASE](Py_Vehicle v, py::tuple c) {
-			float steering = c.size() > 0 ? py::cast<float>(c[0]) : 0, throttle = c.size() > 1 ? py::cast<float>(c[1]) : 0, brake = c.size() > 2 ? py::cast<float>(c[2]) : 0;
+			float steering = c.size() > 0 ? py::cast<float>(c[0]) : 0.0;
+            float throttle = c.size() > 1 ? py::cast<float>(c[1]) : 0.0;
+            float brake = c.size() > 2 ? py::cast<float>(c[2]) : 0.0;
+
 			float current_speed = ENTITY::GET_ENTITY_SPEED_VECTOR(v, true).y;
 			unsigned char gear = get<unsigned char>(v, GEAR_BASE);
-			float control_throttle = 0, control_brake = 0;
+
+			float control_throttle = 0.0;
+            float control_brake = 0.0;
+
 			if (gear > 0) { // Forward gear
 				if (throttle >= 0.f) {
 					control_throttle = throttle;
@@ -245,8 +250,13 @@ void custom(py::class_<Py_Vehicle> c) {
 					control_throttle = throttle + brake;
 				}
 			}
-			if (control_throttle > 0) control_throttle = 0.25 + 0.75 * control_throttle; // Get out of the deadzone
-			if (control_brake > 0) control_brake = 0.25 + 0.75 * control_brake; // Get out of the deadzone
+            // Get out of the deadzone
+			if (control_throttle > 0)
+                control_throttle = 0.25 + 0.75 * control_throttle;
+            // Get out of the deadzone
+			if (control_brake > 0)
+                control_brake = 0.25 + 0.75 * control_brake;
+
 			CONTROLS::_SET_CONTROL_NORMAL(27, ControlVehicleAccelerate,control_throttle); //[0,1]
 			CONTROLS::_SET_CONTROL_NORMAL(27, ControlVehicleBrake, control_brake); //[0,1]
 			CONTROLS::_SET_CONTROL_NORMAL(27, ControlVehicleMoveLeftRight, steering > 0 ? (0.25 + 0.75 * steering) : (-0.25 + 0.75 * steering)); //[-1,1]
@@ -338,12 +348,24 @@ void custom(py::class_<Py_Object> c) {
 		.def_static("list", getAll<Py_Object, worldGetAllObjects>)
 		;
 }
+
 void custom(py::class_<Py_Pickup> c) {
 	c
 		.def_static("list", getAll<Py_Pickup, worldGetAllPickups>)
 		;
 }
+
 void custom(py::class_<Py_Hash> c) {
 	c.def("__repr__", [](const Py_Hash & h) { return ((std::ostringstream&)(std::ostringstream() << "0x" << std::hex << h.id)).str();  });
 	c.def("__str__", [](const Py_Hash & h) { return ((std::ostringstream&)(std::ostringstream() << "0x" << std::hex << h.id)).str();  });
+}
+
+void custom(py::class_<Py_Worldprobe> c) {
+    c.def_static("get_raycast_result",
+            [](int handle, BOOL& hit, Vector3& end, Vector3& normal, Py_Entity& entity) -> int {
+				Entity tmp = entity;
+                int result = WORLDPROBE::_GET_RAYCAST_RESULT(handle, &hit, &end, &normal, &tmp);
+				entity = tmp;
+				return result;
+            });
 }

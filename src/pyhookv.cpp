@@ -59,5 +59,3 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID) {
 	}
 	return TRUE;
 }
-
-
